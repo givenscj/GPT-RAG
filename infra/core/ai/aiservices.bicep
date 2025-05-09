@@ -30,6 +30,12 @@ resource newAccount 'Microsoft.CognitiveServices/accounts@2024-10-01' = if (!aiS
   properties: {
     customSubDomainName: customSubDomainName
     publicNetworkAccess: publicNetworkAccess
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+      ipRules: [
+      ]
+    }
   }
   sku: sku
 }
