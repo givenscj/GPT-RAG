@@ -1021,6 +1021,10 @@ var secureAppSettings = [
   {
     name: 'DB_PASSWORD'
     value: ''
+  },
+  {
+    name: 'AZURE_ORCHESTRATOR_FUNC_KEY'
+    value: resourceToken
   }
   {
     name: 'host--functionkey--default'
@@ -1468,9 +1472,30 @@ var appSettings = [
     value: 'function'
   }
   {
-    name: 'MCP_PORT'
-    value: '80'
+    name: 'AZURE_MCP_SERVER_TIMEOUT'
+    value: '240'
   }
+  {
+    name: 'AZURE_MCP_SERVER_PORT'
+    value: '5000'
+  }
+  {
+    name: 'AZURE_MCP_SERVER_HOST'
+    value: 'local'
+  }
+  {
+    name: 'AZURE_MCP_SERVER_MODE'
+    value: 'sse'
+  }
+  {
+    name: 'USE_CODE_INTERPRETER'
+    value: 'true'
+  }
+  {
+    name: 'POOL_MANAGEMENT_ENDPOINT'
+    value: ''
+  }
+  
 ]
 
 module appConfig './core/appConfig/appconfig.bicep' = if (provisionAppConfig) {
@@ -1777,8 +1802,12 @@ module orchestratorAppSetings './core/appConfig/appconfig-values.bicep' = if (!u
         value: orchestrator.outputs.name
       }
       {
+        name: 'AZURE_ORCHESTRATOR_FUNC_KEY'
+        value: orchestrator.outputs.functionKey
+      }
+      {
         name: 'ORCHESTRATOR_ENDPOINT'
-        value: orchestrator.outputs.uri
+        value: '${orchestrator.outputs.uri}/api/orc'
       }
     ]
     secureAppSettings: []
@@ -1842,25 +1871,25 @@ module orchestratorAccess './core/security/resource-group-role-assignment.bicep'
         principalId: orchestrator.outputs.identityPrincipalId
         roleDefinitionId: storageBlobDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: orchestratorStorage.outputs.id
       }
       {
         principalId: orchestrator.outputs.identityPrincipalId
         roleDefinitionId: storageFileContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: orchestratorStorage.outputs.id
       }
       {
         principalId: orchestrator.outputs.identityPrincipalId
         roleDefinitionId: storageQueueDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: orchestratorStorage.outputs.id
       }
       {
         principalId: orchestrator.outputs.identityPrincipalId
         roleDefinitionId: storageTableContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: orchestratorStorage.outputs.id
       }
       {
         principalId: orchestrator.outputs.identityPrincipalId
@@ -1882,7 +1911,7 @@ module orchestratorAccess './core/security/resource-group-role-assignment.bicep'
       }
       {
         principalId: orchestrator.outputs.identityPrincipalId
-        roleDefinitionId: openAIUserRole.id
+        roleDefinitionId: cogServicesUserRole.id
         principalType: 'ServicePrincipal'
         resourceId: openAi.outputs.id
       }
@@ -2089,7 +2118,7 @@ module mcpAccess './core/security/resource-group-role-assignment.bicep' = if (!u
       }
       {
         principalId: mcpAppServer.outputs.identityPrincipalId
-        roleDefinitionId: openAIUserRole.id
+        roleDefinitionId: cogServicesUserRole.id
         principalType: 'ServicePrincipal'
         resourceId: aiServices.outputs.id
       }
@@ -2369,25 +2398,25 @@ module ingestionAccess './core/security/resource-group-role-assignment.bicep' = 
         principalId: dataIngestion.outputs.identityPrincipalId
         roleDefinitionId: storageBlobDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: dataIngestionStorage.outputs.id
       }
       {
         principalId: dataIngestion.outputs.identityPrincipalId
         roleDefinitionId: storageFileContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: dataIngestionStorage.outputs.id
       }
       {
         principalId: dataIngestion.outputs.identityPrincipalId
         roleDefinitionId: storageQueueDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: dataIngestionStorage.outputs.id
       }
       {
         principalId: dataIngestion.outputs.identityPrincipalId
         roleDefinitionId: storageTableContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId: storage.outputs.id
+        resourceId: dataIngestionStorage.outputs.id
       }
       {
         principalId: dataIngestion.outputs.identityPrincipalId
@@ -2571,6 +2600,32 @@ module searchService 'core/search/search-services.bicep' = {
       name: _searchServiceSkuName
     }
     semanticSearch: _useSemanticReranking?'free':'disabled'
+  }
+}
+
+module searchAppConfigSettings './core/appConfig/appconfig-values.bicep' = {
+  name: 'searchAppConfigSettings'
+  dependsOn: [
+    appConfig
+    searchService
+  ]
+  params: {
+    name : _appConfigName
+    appSettings : [
+      {
+        name: 'AZURE_SEARCH_NAME'
+        value: searchService.outputs.name
+      }
+      {
+        name: 'AZURE_SEARCH_ENDPOINT'
+        value: searchService.outputs.endpoint
+      }
+      {
+        name: 'AZURE_SEARCH_PRINCIPAL_ID'
+        value: searchService.outputs.principalId
+      }
+    ]
+    secureAppSettings: []
   }
 }
 
@@ -3378,6 +3433,16 @@ module containerAppPe './core/network/private-endpoint.bicep' = if (_networkIsol
   }
 }
 
+var sessionPoolName = '${abbrs.containers.containerApp}${resourceToken}-session-pool'
+module containerSessionPool './core/containers/session-pool.bicep' = {
+  name: sessionPoolName
+  params: {
+    name: sessionPoolName
+    location: location
+    tags: union(tags, {})
+  }
+}
+
 var containerAppsEnvironmentName = '${abbrs.containers.containerAppsEnvironment}${resourceToken}'
 module containerAppsEnvironment './core/containers/container-apps-environment.bicep' = if (useACA) {
   name: containerAppsEnvironmentName
@@ -4159,7 +4224,7 @@ module setAksAppConfig './core/appConfig/appconfig-values.bicep' = if (useAKS) {
       }
       {
         name: 'AZURE_MCP_SERVER_TIMEOUT'
-        value: 30
+        value: 240
       }
       {
         name: 'AZURE_MCP_SERVER_APIKEY'

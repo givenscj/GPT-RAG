@@ -140,3 +140,4 @@ output name string = functionAppReuse ? existingFunction.name : newFunction.name
 output uri string = functionAppReuse ? 'https://${existingFunction.properties.defaultHostName}' : 'https://${newFunction.properties.defaultHostName}'
 output identityPrincipalId string = uaiFunc.properties.principalId
 output location string = functionAppReuse ? existingFunction.location : newFunction.location
+output functionKey string = listKeys(newFunction.id, '2016-08-01').functionKeys.default
