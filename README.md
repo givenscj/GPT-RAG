@@ -112,8 +112,7 @@ The deployment procedure is quite simple, just install the prerequisites mention
 azd init -t azure/gpt-rag
 ```
 
-> [!Note]
-> Add `-b agentic` if using the Agentic AutoGen-based orchestrator.
+> **Note**: Add `-b agentic` if using the Agentic AutoGen-based orchestrator.
 > ```sh
 > azd init -t azure/gpt-rag -b agentic
 > ```
@@ -234,16 +233,8 @@ azd env refresh
 azd deploy  
 ```  
    
-> [!Note]
-> When running the ```azd init ...``` and ```azd env refresh```, use the same environment name, subscription, and region used in the initial provisioning of the infrastructure.  
-
-> [!Note]
-> Add `-b agentic` if using the Agentic AutoGen-based orchestrator.
-> ```sh
-> azd init -t azure/gpt-rag -b agentic
-> ```
-
- 
+> Note: when running the ```azd init ...``` and ```azd env refresh```, use the same environment name, subscription, and region used in the initial provisioning of the infrastructure.  
+   
 **Done! Zero trust deployment is completed.**
 
 > [!Note]

@@ -5,7 +5,7 @@
   },
   "name": "$NAME",
   "type": "azurerm",
-  "url": "https://management.azure.com/",
+  "url": "https://management.azure.us/",
   "authorization": {
     "parameters": {
       "serviceprincipalid": "$SERVICE_PRINCIPAL_ID",

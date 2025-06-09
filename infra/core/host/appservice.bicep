@@ -120,7 +120,7 @@ resource newAppService 'Microsoft.Web/sites@2022-09-01' = if (!appServiceReuse &
         ]
       )    
       cors: {
-        allowedOrigins: union([ 'https://portal.azure.com', 'https://ms.portal.azure.com' ], allowedOrigins)
+        allowedOrigins: union([ 'https://portal.azure.us', 'https://ms.portal.azure.us' ], allowedOrigins)
       }
     }
     clientAffinityEnabled: clientAffinityEnabled

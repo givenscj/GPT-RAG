@@ -121,7 +121,7 @@ resource newFunction 'Microsoft.Web/sites@2022-03-01' = {
         ]
       )
       cors: {
-          allowedOrigins: union([ 'https://portal.azure.com', 'https://ms.portal.azure.com' ], allowedOrigins)
+          allowedOrigins: union([ 'https://portal.azure.us', 'https://ms.portal.azure.us' ], allowedOrigins)
         }          
 
     } 

@@ -24,7 +24,7 @@ headers=(
     "Content-Type: application/json"
 )
 
-baseURI="https://management.azure.com/subscriptions/$Subscription/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AoaiResourceName"
+baseURI="https://management.azure.us/subscriptions/$Subscription/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AoaiResourceName"
 
 # Creating a blocklist for AOAI account
 filePath="$PWD/raiblocklist.json"

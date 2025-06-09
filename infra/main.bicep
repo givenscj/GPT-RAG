@@ -30,7 +30,7 @@ var _resourceGroupName = !empty(resourceGroupName) ? resourceGroupName : 'rg-${e
 var azdTags = { 'azd-env-name': environmentName }
 
 @description('Key-value pairs of tags to assign to all resources. The default azd tags are automatically added.')
-param deploymentTags object = {}
+param deploymentTags object
 var tags = union(azdTags, deploymentTags)
 
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
@@ -305,7 +305,7 @@ var _chatGptModelName = !empty(chatGptModelName) ? chatGptModelName : 'gpt-4o'
 @description('GPT model deployment type.')
 // @allowed([ 'Standard', 'ProvisionedManaged', 'GlobalStandard'])
 param chatGptModelDeploymentType string = ''
-var _chatGptModelDeploymentType = !empty(chatGptModelDeploymentType) ? chatGptModelDeploymentType : 'GlobalStandard'
+var _chatGptModelDeploymentType = !empty(chatGptModelDeploymentType) ? chatGptModelDeploymentType : 'Standard'
 
 @description('GPT model version.')
 // @allowed([ '0613', '1106', '1106-Preview', '0125-preview', 'turbo-2024-04-09', '2024-05-13', '2024-11-20'])
@@ -1461,6 +1461,7 @@ module openAi 'core/ai/aiservices.bicep' = {
     }
     keyVaultName: keyVault.outputs.name    
     deployments: [
+  
       {
         name: _chatGptDeploymentName
         model: {
@@ -1484,7 +1485,8 @@ module openAi 'core/ai/aiservices.bicep' = {
           name: _embeddingsDeploymentType
           capacity: _embeddingsDeploymentCapacity
         }
-      }      
+      }     
+    
     ]
   }
 }

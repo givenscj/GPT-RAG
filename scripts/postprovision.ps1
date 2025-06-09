@@ -13,7 +13,7 @@ $aoaiModelName = $env:AZURE_CHAT_GPT_DEPLOYMENT_NAME
 # Check conditions
 # RAI script: AOAI content filters
 $RAIscript = Join-Path -Path $PSScriptRoot -ChildPath 'rai\raipolicies.ps1'
-& $RAIscript -Tenant $tenantId -Subscription $subscriptionId -ResourceGroup $resourceGroupName -AoaiResourceName $aoaiResourceName -AoaiModelName $aoaiModelName -RaiPolicyName 'MainRAIpolicy' -RaiBlocklistName 'MainBlockListPolicy'
+#& $RAIscript -Tenant $tenantId -Subscription $subscriptionId -ResourceGroup $resourceGroupName -AoaiResourceName $aoaiResourceName -AoaiModelName $aoaiModelName -RaiPolicyName 'MainRAIpolicy' -RaiBlocklistName 'MainBlockListPolicy'
 
 if ($env:AZURE_ZERO_TRUST -eq "FALSE") {
     exit 0
