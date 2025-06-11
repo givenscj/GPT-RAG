@@ -7,8 +7,8 @@ targetScope = 'resourceGroup'
 /////////////////////////////////////////////////////////////////////////////
 // TEMPLATE SETTINGS (PARAMETERS and VARIABLES)
 /////////////////////////////////////////////////////////////////////////////
-
 // Parameters Note:
+
 // Use the file 'main.parameters.json' to set the parameter values.
 // 'main.parameters.json', map the parameters to environment variables using the "${ENV_VAR_NAME}" notation.
 // If you want to set the value of any of those variables, just run the following command: azd env set ENV_VAR_NAME value.
@@ -1021,7 +1021,7 @@ var secureAppSettings = [
   {
     name: 'DB_PASSWORD'
     value: ''
-  },
+  }
   {
     name: 'AZURE_ORCHESTRATOR_FUNC_KEY'
     value: resourceToken
