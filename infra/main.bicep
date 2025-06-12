@@ -652,11 +652,11 @@ var _azureOrchestratorPe = !empty(azureOrchestratorPe) ? azureOrchestratorPe : '
 
 @description('The name of the Azure Frontend Private Endpoint. If left empty, a random name will be generated.')
 param azureFrontendPe string = ''
-var _azureFrontendPe = !empty(azureFrontendPe) ? azureFrontendPe : 'frontend${abbrs.networking.privateEndpoint}${resourceToken}'
+var _azureFrontendPe = !empty(azureFrontendPe) ? azureFrontendPe : '${abbrs.compute.webApp}chat${abbrs.networking.privateEndpoint}${resourceToken}'
 
 @description('The name of the Azure MCP Private Endpoint. If left empty, a random name will be generated.')
 param azureMcpPe string = ''
-var _azureMcpPe = !empty(azureFrontendPe) ? azureFrontendPe : 'mcp${abbrs.networking.privateEndpoint}${resourceToken}'
+var _azureMcpPe = !empty(azureMcpPe) ? azureMcpPe : '${abbrs.compute.webApp}chat${abbrs.networking.privateEndpoint}${resourceToken}'
 
 @description('The name of the Azure Data Ingestion Private Endpoint. If left empty, a random name will be generated.')
 param azureDataIngestionPe string = ''
@@ -672,11 +672,11 @@ var _azureAppConfigPe = !empty(azureAppConfigPe) ? azureAppConfigPe : 'appconfig
 
 @description('The name of the Azure OpenAI Private Endpoint. If left empty, a random name will be generated.')
 param azureOpenAiPe string = ''
-var _azureOpenAiPe = !empty(azureOpenAiPe) ? azureOpenAiPe : 'openAi${abbrs.networking.privateEndpoint}${resourceToken}'
+var _azureOpenAiPe = !empty(azureOpenAiPe) ? azureOpenAiPe : '${abbrs.ai.openAIService}${abbrs.networking.privateEndpoint}${resourceToken}'
 
 @description('The name of the Azure Search Private Endpoint. If left empty, a random name will be generated.')
 param azureSearchPe string = ''
-var _azureSearchPe = !empty(azureSearchPe) ? azureSearchPe : 'search${abbrs.networking.privateEndpoint}${resourceToken}'
+var _azureSearchPe = !empty(azureSearchPe) ? azureSearchPe : '${abbrs.ai.aiSearch}${abbrs.networking.privateEndpoint}${resourceToken}'
 
 @description('The name of the VM Key Vault Secret. If left empty, a random name will be generated.')
 param vmKeyVaultSecName string = ''
