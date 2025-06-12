@@ -819,6 +819,16 @@ module searchDnsZone './core/network/private-dns-zones.bicep' = if (_networkIsol
   }
 }
 
+module vmManagedIdentity './core/security/managed-identity.bicep' = {
+  name: '${abbrs.security.managedIdentity}testvm-${resourceToken}'
+  
+  params: {
+    name: '${abbrs.security.managedIdentity}testvm-${resourceToken}'
+    location: location
+    tags: union(tags, {})
+  }
+}
+
 module testvm './core/vm/dsvm.bicep' = if (_networkIsolation && !_vnetReuse && _deployVM)  {
   name: 'testvm'
   params: {
@@ -833,6 +843,7 @@ module testvm './core/vm/dsvm.bicep' = if (_networkIsolation && !_vnetReuse && _
     // this is the named of the secret to store the vm password in keyvault. It matches what is used on main.parameters.json
     vmUserPasswordKey: _vmKeyVaultSecName
     principalId: principalId
+    identityId: vmManagedIdentity.outputs.id
   }
 }
 
@@ -2268,55 +2279,55 @@ module vmAccess './core/security/resource-group-role-assignment.bicep' = if (_ne
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: keyVaultSecretsUserRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: storageBlobDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: storageFileContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: storageQueueDataContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: appConfigDataOwnerRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: openAIUserRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: searchIndexContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: searchServiceContributorRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
       {
         principalId: testvm.outputs.vmPrincipalId
         roleDefinitionId: cogServicesUserRole.id
         principalType: 'ServicePrincipal'
-        resourceId : rg.id
+        resourceId : ''
       }
     ]
   }

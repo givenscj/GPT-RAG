@@ -11,6 +11,7 @@ param authenticationType string = 'password' //'sshPublicKey'
 param vmUserPasswordKey string
 param keyVaultName string
 param principalId string
+param identityId string
 
 var vmSize = {
   'CPU-4GB': 'Standard_B2s'
@@ -72,11 +73,11 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-03-01' = {
   location: location
   tags: tags
   identity: {
-    type: principalId == null ? 'SystemAssigned' : 'UserAssigned'
-    userAssignedIdentities: principalId == null
+    type: identityId == null ? 'SystemAssigned' : 'UserAssigned'
+    userAssignedIdentities: identityId == null
       ? null
       : {
-          '${principalId}': {}
+          '${identityId}': {}
         }
   }
   properties: {
@@ -111,7 +112,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-03-01' = {
   }
 }
 
-output vmPrincipalId string = virtualMachine.identity.principalId
+var vmPrincipalId = (identityId == null) ? virtualMachine.identity.principalId : virtualMachine.identity.userAssignedIdentities[identityId].principalId
 
 resource cy 'Microsoft.Network/bastionHosts@2023-04-01' = {
   name: bastionName
@@ -139,11 +140,11 @@ resource cy 'Microsoft.Network/bastionHosts@2023-04-01' = {
 
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, resourceGroup().id, 'Contributor')
+  name: guid(subscription().id, resourceGroup().id, 'Contributor', identityId)
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
-    principalId: virtualMachine.identity.principalId
+    principalId: vmPrincipalId
   }
 }
 
@@ -175,10 +176,12 @@ resource vmUserPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
 }
 
 resource KeyVaultAccessRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, resourceGroup().id, principalId, keyVault.id, 'Key Vault Secrets Officer')
+  name: guid(subscription().id, resourceGroup().id, identityId, keyVault.id, 'Key Vault Secrets Officer')
   scope: keyVault
   properties: {
-    principalId: principalId
+    principalId: vmPrincipalId
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
   }
 }
+
+output vmPrincipalId string = vmPrincipalId
