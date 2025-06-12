@@ -48,7 +48,10 @@
         "value": "${AZURE_VNET_NAME}"
       },
       "vnetAddress": {
-        "value": "${AZURE_VNET_ADDRESS}"
+        "value": [
+          "10.0.0.0/24",
+          "10.0.1.0/24"
+        ]
       },                  
       "chatGptDeploymentName": {
         "value": "${AZURE_CHAT_GPT_DEPLOYMENT_NAME}"

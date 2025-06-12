@@ -9,7 +9,7 @@ param appIntSubnetName string
 param appServicesSubnetName string
 param databaseSubnetName string
 param bastionSubnetName string = 'AzureBastionSubnet'
-param vnetAddress string = '10.0.0.0/23'
+param vnetAddress array = ['10.0.0.0/24','10.0.1.0/24']
 param vnetAddressAks string = '10.220.128.0/20'
 param aiSubnetPrefix string = '10.0.0.0/26'
 param acaSubnetPrefix string = '10.0.1.64/26'
@@ -23,6 +23,9 @@ param appServicePlanName string
 param tags object = {}
 param vnetReuse bool
 param existingVnetResourceGroupName string
+
+param useAKS bool = false
+param useACA bool = false
 
 // Parameters for NSG names
 param aiNsgName string = ''
@@ -67,7 +70,7 @@ module acaNsg './security-group.bicep' = {
   }
 }
 
-module aksNsg './security-group.bicep' = {
+module aksNsg './security-group.bicep' = if (useAKS) {
   scope: resourceGroup(existingVnetResourceGroupName)
   name: _aksNsgName
   params: {
@@ -239,19 +242,7 @@ module bastionNsg './security-group.bicep' = {
   }
 }
 
-var subnets = [
-  {
-    name: aiSubnetName
-    properties: {
-      addressPrefix: aiSubnetPrefix
-      privateEndpointNetworkPolicies: 'Enabled'
-      privateLinkServiceNetworkPolicies: 'Enabled'
-      networkSecurityGroup: {
-        id: aiNsg.outputs.id
-      }
-    }
-  }
-  {
+var acaSubnet = useACA ? [{
     name: acaSubnetName
     properties: {
       addressPrefix: acaSubnetPrefix
@@ -261,8 +252,9 @@ var subnets = [
         id: acaNsg.outputs.id
       }
     }
-  }
-  {
+  }] : []
+
+var aksSubnet = useAKS ? [{
     name: aksSubnetName
     properties: {
       addressPrefix: aksSubnetPrefix
@@ -270,6 +262,19 @@ var subnets = [
       privateLinkServiceNetworkPolicies: 'Enabled'
       networkSecurityGroup: {
         id: aksNsg.outputs.id
+      }
+    }
+  }] : []
+
+var subnets = [
+  {
+    name: aiSubnetName
+    properties: {
+      addressPrefix: aiSubnetPrefix
+      privateEndpointNetworkPolicies: 'Enabled'
+      privateLinkServiceNetworkPolicies: 'Enabled'
+      networkSecurityGroup: {
+        id: aiNsg.outputs.id
       }
     }
   }
@@ -330,25 +335,16 @@ var subnets = [
 
 module vnet './vnet_core.bicep' = {
   scope: resourceGroup(existingVnetResourceGroupName)
-  name: vnetName
+  name: '${vnetName}-core'
   params : {
     name : vnetName
     location: location
     tags: tags
-    addressPrefixes: [
-      vnetAddress
-      vnetAddressAks
-    ]
-    subnets: subnets
+    addressPrefixes: useAKS ? concat( vnetAddress, [vnetAddressAks]) : vnetAddress 
+    subnets: concat (subnets, acaSubnet, aksSubnet)
   }
 }
 
 output name string = vnet.outputs.name
 output id string = vnet.outputs.id
-output aiSubId string = vnet.outputs.subnets[0].id
-output acaSubId string = vnet.outputs.subnets[1].id
-output aksSubId string = vnet.outputs.subnets[2].id
-output appServicesSubId string = vnet.outputs.subnets[3].id
-output databaseSubId string = vnet.outputs.subnets[4].id
-output bastionSubId string = vnet.outputs.subnets[5].id
-output appIntSubId string = vnet.outputs.subnets[6].id
+output subnets array = vnet.outputs.subnets

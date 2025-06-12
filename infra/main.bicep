@@ -263,6 +263,11 @@ var _deployVM = deployVM
 param vmUserName string = ''
 var _vmUserName = !empty(vmUserName) ? vmUserName : 'gptrag'
 
+@description('Use Session Pool?')
+@allowed([true, false])
+param useSessionPool bool = false
+var _useSessionPool = useSessionPool
+
 @description('Use ACA?')
 @allowed([true, false])
 param useACA bool = false
@@ -302,8 +307,8 @@ param vnetName string = ''
 var _vnetName = _azureReuseConfig.vnetReuse ? _azureReuseConfig.existingVnetName : !empty(vnetName) ? vnetName : '${abbrs.networking.virtualNetwork}ai${resourceToken}'
 
 @description('Address space for the virtual network')
-param vnetAddress string = ''
-var _vnetAddress = !empty(vnetAddress) ? vnetAddress : '10.0.0.0/23'
+param vnetAddress array = ['10.0.0.0/24','10.0.1.0/24']
+var _vnetAddress = length(vnetAddress) > 0 ? vnetAddress : ['10.0.0.0/24','10.0.1.0/24']
 
 @description('Address space for the virtual network')
 param vnetAddressAks string = ''
@@ -816,13 +821,12 @@ module searchDnsZone './core/network/private-dns-zones.bicep' = if (_networkIsol
 
 module testvm './core/vm/dsvm.bicep' = if (_networkIsolation && !_vnetReuse && _deployVM)  {
   name: 'testvm'
-  
   params: {
     location: location
     name: _ztVmName
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
-    bastionSubId: _networkIsolation?vnet.outputs.bastionSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
+    bastionSubId: _networkIsolation?subnets['AzureBastionSubnet'].id:''
     vmUserPassword: vmUserInitialPassword
     vmUserName: _vmUserName
     keyVaultName: _bastionKvName
@@ -864,7 +868,7 @@ module storagepe './core/network/private-endpoint.bicep' = if (_networkIsolation
     location: location
     name: _azureStorageAccountPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: storage.outputs.id
     groupIds: ['blob']
     dnsZoneId: _networkIsolation?blobDnsZone.outputs.id:''
@@ -911,7 +915,7 @@ module cosmospe './core/network/private-endpoint.bicep' = if (_networkIsolation 
     location: location
     name: _azureDbAccountPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.databaseSubId:''
+    subnetId: _networkIsolation? subnets['database-subnet'].id:''
     serviceId: cosmosAccount.outputs.id
     groupIds: ['Sql']
     dnsZoneId: _networkIsolation?documentsDnsZone.outputs.id:''
@@ -946,7 +950,7 @@ module keyvaultpe './core/network/private-endpoint.bicep' = if (_networkIsolatio
     location: location
     name: _azureKeyvaultPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: keyVault.outputs.id
     groupIds: ['Vault']
     dnsZoneId: _networkIsolation?vaultDnsZone.outputs.id:''
@@ -1516,7 +1520,7 @@ module appConfig './core/appConfig/appconfig.bicep' = if (provisionAppConfig) {
     //privateDnsZones: []
     resourceToken: resourceToken
     //timestamp: ''
-    //subnetId: (_networkIsolation && !_vnetReuse)?vnet.outputs.appIntSubId:''
+    //subnetId: (_networkIsolation && !_vnetReuse)? subnets['app-int-subnet'].id:''
     //uaiId: ''  //uaiAppConfig.id
   }
 }
@@ -1618,7 +1622,7 @@ module appConfigPe './core/network/private-endpoint.bicep' = if (_networkIsolati
     location: location
     name: _azureAppConfigPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: appConfig.outputs.id
     groupIds: ['configurationStores']
     dnsZoneId: _networkIsolation?appConfigDnsZone.outputs.id:''
@@ -1764,7 +1768,7 @@ module orchestrator './core/host/functions.bicep' = if(!useACA && !useAKS)  {
     location: location
     networkIsolation: (_networkIsolation && !_vnetReuse)?true:false
     vnetName: (_networkIsolation && !_vnetReuse)?vnet.outputs.name:''
-    subnetId: (_networkIsolation && !_vnetReuse)?vnet.outputs.appIntSubId:''
+    subnetId: (_networkIsolation && !_vnetReuse)? subnets['app-int-subnet'].id:''
     tags: union(tags, { 'azd-service-name': 'orchestrator' })
     identityType: 'SystemAssigned'
     keyVaultName: keyVault.outputs.name
@@ -1834,7 +1838,7 @@ module orchestratorStoragepe './core/network/private-endpoint.bicep' = if (_netw
     location: location
     name: '${_azureStorageAccountPe}orc'
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.appServicesSubId:''
+    subnetId: _networkIsolation?subnets['app-services-subnet'].id:''
     serviceId: orchestratorStorage.outputs.id
     groupIds: ['blob']
     dnsZoneId: _networkIsolation?blobDnsZone.outputs.id:''
@@ -1848,7 +1852,7 @@ module orchestratorPe './core/network/private-endpoint.bicep' = if (_networkIsol
     location: location
     name: _azureOrchestratorPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.appServicesSubId:''
+    subnetId: _networkIsolation?subnets['app-services-subnet'].id:''
     serviceId: orchestrator.outputs.id
     groupIds: ['sites']
     dnsZoneId: _networkIsolation?websitesDnsZone.outputs.id:''
@@ -1993,7 +1997,7 @@ module frontEnd  'core/host/appservice.bicep' = if(!useACA && !useAKS) {
     existingAppServiceResourceGroupName: _azureReuseConfig.existingAppServiceNameResourceGroupName
     networkIsolation: (_networkIsolation && !_vnetReuse)
     vnetName: (_networkIsolation && !_vnetReuse)?vnet.outputs.name:''
-    subnetId: (_networkIsolation && !_vnetReuse)?vnet.outputs.appIntSubId:''
+    subnetId: (_networkIsolation && !_vnetReuse)? subnets['app-int-subnet'].id:''
     appCommandLine: 'python ./app.py'
     location: location
     tags: union(tags, { 'azd-service-name': 'frontend' })
@@ -2015,7 +2019,7 @@ module frontendPe './core/network/private-endpoint.bicep' = if (_networkIsolatio
     location: location
     name: _azureFrontendPe
     tags: tags
-    subnetId: _networkIsolation ? vnet.outputs.appServicesSubId : ''
+    subnetId: _networkIsolation ? subnets['app-services-subnet'].id : ''
     serviceId: frontEnd.outputs.id
     groupIds: ['sites']
     dnsZoneId: _networkIsolation?websitesDnsZone.outputs.id:''
@@ -2033,7 +2037,7 @@ module mcpAppServer  'core/host/appservice.bicep' = if (!useACA && !useAKS && us
     existingAppServiceResourceGroupName: _azureReuseConfig.existingAppServiceNameResourceGroupName
     networkIsolation: (_networkIsolation && !_vnetReuse)
     vnetName: (_networkIsolation && !_vnetReuse)?vnet.outputs.name:''
-    subnetId: (_networkIsolation && !_vnetReuse)?vnet.outputs.appIntSubId:''
+    subnetId: (_networkIsolation && !_vnetReuse)?subnets['app-int-subnet'].id:''
     appCommandLine: 'gunicorn -k uvicorn.workers.UvicornWorker server:app'
     location: location
     tags: union(tags, { 'azd-service-name': 'mcpServer' })
@@ -2055,7 +2059,7 @@ module mcpServerPe './core/network/private-endpoint.bicep' = if (_networkIsolati
     location: location
     name: _azureMcpPe
     tags: tags
-    subnetId: _networkIsolation ? vnet.outputs.appServicesSubId : ''
+    subnetId: _networkIsolation ? subnets['app-services-subnet'].id : ''
     serviceId: mcpAppServer.outputs.id
     groupIds: ['sites']
     dnsZoneId: _networkIsolation?websitesDnsZone.outputs.id:''
@@ -2203,7 +2207,7 @@ module dataIngestion './core/host/functions.bicep' = if (!useACA && !useAKS) {
     location: location
     networkIsolation: (_networkIsolation && !_vnetReuse)?true:false
     vnetName: (_networkIsolation && !_vnetReuse)?vnet.outputs.name:''
-    subnetId: (_networkIsolation && !_vnetReuse)?vnet.outputs.appIntSubId:'' 
+    subnetId: (_networkIsolation && !_vnetReuse)? subnets['app-int-subnet'].id:'' 
     tags: union(tags, { 'azd-service-name': 'dataIngest' })
     identityType: 'SystemAssigned'
     // identityId: identityId
@@ -2245,7 +2249,7 @@ module dataIngestionStoragepe './core/network/private-endpoint.bicep' = if (_net
     location: location
     name: '${_azureStorageAccountPe}ing'
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.appServicesSubId:''
+    subnetId: _networkIsolation? subnets['app-services-subnet'].id:''
     serviceId: dataIngestionStorage.outputs.id
     groupIds: ['blob']
     dnsZoneId: _networkIsolation?blobDnsZone.outputs.id:''
@@ -2469,7 +2473,7 @@ module ingestionPe './core/network/private-endpoint.bicep' = if (_networkIsolati
     location: location
     name: _azureDataIngestionPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.appServicesSubId:''
+    subnetId: _networkIsolation? subnets['app-services-subnet'].id:''
     serviceId: dataIngestion.outputs.id
     groupIds: ['sites']
     dnsZoneId: _networkIsolation?websitesDnsZone.outputs.id:''
@@ -2508,7 +2512,7 @@ module aiServicesPe './core/network/private-endpoint.bicep' = if (_networkIsolat
     location: location
     name: _azureAiServicesPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: aiServices.outputs.id
     groupIds: ['account']
     dnsZoneId: _networkIsolation?aiservicesDnsZone.outputs.id:''
@@ -2570,7 +2574,7 @@ module openAiPe './core/network/private-endpoint.bicep' = if (_networkIsolation 
     location: location
     name: _azureOpenAiPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: openAi.outputs.id
     groupIds: ['account']
     dnsZoneId: _networkIsolation?openaiDnsZone.outputs.id:''
@@ -2678,7 +2682,7 @@ module searchPe './core/network/private-endpoint.bicep' = if (_networkIsolation 
     location: location
     name: _azureSearchPe
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: searchService.outputs.id
     groupIds: ['searchService']
     dnsZoneId: _networkIsolation?searchDnsZone.outputs.id:''
@@ -3247,7 +3251,7 @@ module containerRegistryPe './core/network/private-endpoint.bicep' = if (_networ
     location: location
     name: containerRegistryPEName
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: containerRegistry.outputs.id
     groupIds: ['registry']
     dnsZoneId: _networkIsolation?containerRegistryDnsZone.outputs.id:''
@@ -3426,7 +3430,7 @@ module containerAppPe './core/network/private-endpoint.bicep' = if (_networkIsol
     location: location
     name: containerAppsPeName
     tags: tags
-    subnetId: _networkIsolation?vnet.outputs.aiSubId:''
+    subnetId: _networkIsolation?subnets['ai-subnet'].id:''
     serviceId: containerAppsEnvironment.outputs.id
     groupIds: ['managedEnvironments']
     dnsZoneId: _networkIsolation?acaDnsZone.outputs.id:''
@@ -3434,7 +3438,7 @@ module containerAppPe './core/network/private-endpoint.bicep' = if (_networkIsol
 }
 
 var sessionPoolName = '${abbrs.containers.containerApp}${resourceToken}-session-pool'
-module containerSessionPool './core/containers/session-pool.bicep' = {
+module containerSessionPool './core/containers/session-pool.bicep' = if (_useSessionPool) {
   name: sessionPoolName
   params: {
     name: sessionPoolName
@@ -3464,7 +3468,7 @@ module containerAppsEnvironment './core/containers/container-apps-environment.bi
       }
     ]
     vnetConfig: {
-      infrastructureSubnetId: _networkIsolation?vnet.outputs.acaSubId:''
+      infrastructureSubnetId: _networkIsolation?subnets['aca-subnet'].id:''
       internal: true
     }
   }
@@ -3801,14 +3805,12 @@ module network './core/util/virtualNetworkData.bicep' = if (_networkIsolation ||
   params: {
     resourceGroupName: (!empty(vnetResourceGroupName)) ? _vnetResourceGroupName : _resourceGroupName
     vnetName: _vnetName
-    subnetNames: [
-      'aks-subnet'
-    ]
+    subnetNames: useAKS ? ['aks-subnet'] : []
   }
 }
 
 var subnets = (_networkIsolation || useAKS) ? reduce(
-  map(network.outputs.subnets, subnet => {
+  map(vnet.outputs.subnets, subnet => {
       '${subnet.name}': {
         id: subnet.id
         addressPrefix: subnet.addressPrefix
@@ -4041,7 +4043,7 @@ module aksPrivateEndpoint './core/network/private-endpoint.bicep' = if (_network
     location: location
     name: '${abbrs.containers.aksCluster}${abbrs.networking.privateEndpoint}${resourceToken}'
     tags: tags
-    subnetId: vnet.outputs.aksSubId
+    subnetId: subnets['aks-subnet'].id
     serviceId: aksBackend.outputs.id
     groupIds: ['management']
     dnsZoneId: _networkIsolation?privateDnsZones[0].outputs.id:''
@@ -4312,7 +4314,7 @@ output AZURE_VM_DEPLOY_VM bool = _deployVM
 output AZURE_VM_KV_SEC_NAME string = _networkIsolation ? _vmKeyVaultSecName : ''
 output AZURE_VM_NAME string = _networkIsolation ? _ztVmName : ''
 output AZURE_VM_USER_NAME string = _networkIsolation ? _vmUserName : ''
-output AZURE_VNET_ADDRESS string = _vnetAddress
+output AZURE_VNET_ADDRESS array = _vnetAddress
 output AZURE_VNET_NAME string = _vnetName
 output AZURE_ZERO_TRUST string = _networkIsolation ? 'TRUE' : 'FALSE'
 output AZURE_SEARCH_USE_MIS bool = _azureSearchUseMIS
