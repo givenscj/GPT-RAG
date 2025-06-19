@@ -1583,7 +1583,11 @@ var appSettings = [
   }
   {
     name: 'AZURE_MCP_SERVER_TIMEOUT'
-    value: '240'
+    value: '600'
+  }
+  {
+    name: 'AZURE_MCP_CLIENT_TIMEOUT'
+    value: '600'
   }
   {
     name: 'AZURE_MCP_SERVER_PORT'
@@ -1595,7 +1599,7 @@ var appSettings = [
   }
   {
     name: 'AZURE_MCP_SERVER_MODE'
-    value: 'sse'
+    value: 'fastapi'
   }
   {
     name: 'USE_CODE_INTERPRETER'
