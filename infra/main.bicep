@@ -1974,6 +1974,16 @@ var cosmosContributorIdentityAssignmentsAll =  concat(cosmosContributorIdentityA
   }
 ])
 
+module cosmosContributorAccessMCP './core/security/cosmos-access.bicep' = if(useMCP) {
+  name: 'cosmosContributorAccessMCP'
+  scope: az.resourceGroup(_cosmosDbResourceGroupName)
+  params: {
+    accountName: cosmosAccount.outputs.name
+    resourceGroupName: _cosmosDbResourceGroupName
+    principalId: mcpAppServer.outputs.identityPrincipalId
+  }
+}
+
 module cosmosContributorAccessACA './core/security/cosmos-access.bicep' = if(useACA) {
   name: 'cosmosContributorAccessACA'
   scope: az.resourceGroup(_cosmosDbResourceGroupName)
