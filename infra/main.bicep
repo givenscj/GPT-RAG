@@ -299,7 +299,7 @@ var _useAgentic = useAgentic
 @allowed([true, false])
 param networkIsolation bool = false
 var _networkIsolation = networkIsolation
-
+`
 // VNet settings
 
 @description('Virtual network name, you can leave as it is to generate a random name.')
@@ -2057,7 +2057,7 @@ module mcpAppServer  'core/host/appservice.bicep' = if (!useACA && !useAKS && us
     networkIsolation: (_networkIsolation && !_vnetReuse)
     vnetName: (_networkIsolation && !_vnetReuse)?vnet.outputs.name:''
     subnetId: (_networkIsolation && !_vnetReuse)?subnets['app-int-subnet'].id:''
-    appCommandLine: 'gunicorn -k uvicorn.workers.UvicornWorker server:app'
+    appCommandLine: 'gunicorn -k uvicorn.workers.UvicornWorker --timeout 600 server:app'
     location: location
     tags: union(tags, { 'azd-service-name': 'mcpServer' })
     appServicePlanId: appServicePlan.outputs.id
