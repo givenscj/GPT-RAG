@@ -13,11 +13,7 @@ param existingCosmosDbAccountName string
 
 param deployCosmosDb bool = true
 
-
-param conversationContainerName string
-param datasourcesContainerName string  
-param promptsContainerName string  
-
+param containers array = []
 param identityId string
 
 param tags object = {}
@@ -119,19 +115,19 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15
   }
 }
 
-resource conversationsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = if (!cosmosDbReuse && deployCosmosDb) {
+resource newContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = [for container in containers : {
   parent: database
-  name: conversationContainerName
+  name: container.name
   properties: {
     resource: {
-      id: conversationContainerName
+      id: container.name
       partitionKey: {
         paths: [
-          '/id'
+          container.partitionKey
         ]
         kind: 'Hash'
       }
-      analyticalStorageTtl: analyticalStoreTTL
+      analyticalStorageTtl: container.analyticalStoreTTL
       indexingPolicy: {
         indexingMode: 'consistent'
         includedPaths: [
@@ -149,58 +145,7 @@ resource conversationsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDataba
     }
   }
 }
-
-resource modelsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = if (!cosmosDbReuse && deployCosmosDb) {
-  parent: database
-  name: datasourcesContainerName
-  properties: {
-    resource: {
-      id: datasourcesContainerName
-      partitionKey: {
-        paths: [
-          '/id'
-        ]
-        kind: 'Hash'
-      }
-      analyticalStorageTtl: analyticalStoreTTL
-      indexingPolicy: {
-        indexingMode: 'none'
-        automatic: false
-      }
-    }
-    options: {
-      autoscaleSettings: {
-        maxThroughput: autoscaleMaxThroughput
-      }
-    }
-  }
-}
-
-resource promptsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2022-05-15' = if (!cosmosDbReuse && deployCosmosDb) {
-  parent: database
-  name: promptsContainerName
-  properties: {
-    resource: {
-      id: promptsContainerName
-      partitionKey: {
-        paths: [
-          '/id'
-        ]
-        kind: 'Hash'
-      }
-      analyticalStorageTtl: analyticalStoreTTL
-      indexingPolicy: {
-        indexingMode: 'none'
-        automatic: false
-      }
-    }
-    options: {
-      autoscaleSettings: {
-        maxThroughput: autoscaleMaxThroughput
-      }
-    }
-  }
-}
+]
 
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
