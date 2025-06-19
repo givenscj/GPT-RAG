@@ -1802,6 +1802,14 @@ module orchestrator './core/host/functions.bicep' = if(!useACA && !useAKS)  {
   ]
 }
 
+resource existingOrcFunc 'Microsoft.Web/sites@2024-11-01' existing = {
+  scope: (!empty(vnetResourceGroupName)) ? resourceGroup(_vnetResourceGroupName) : resourceGroup(_resourceGroupName)
+  name: _orchestratorFunctionAppName
+  dependsOn: [
+    orchestrator
+  ]
+}
+
 module orchestratorAppSetings './core/appConfig/appconfig-values.bicep' = if (!useACA && !useAKS) {
   name: 'orchestratorAppSetings'
   
@@ -1818,7 +1826,7 @@ module orchestratorAppSetings './core/appConfig/appconfig-values.bicep' = if (!u
       }
       {
         name: 'AZURE_ORCHESTRATOR_FUNC_KEY'
-        value: orchestrator.outputs.functionKey
+        value: listKeys('${existingOrcFunc.id}/host/default', '2022-03-01').masterKey //orchestrator.outputs.functionKey
       }
       {
         name: 'ORCHESTRATOR_ENDPOINT'
