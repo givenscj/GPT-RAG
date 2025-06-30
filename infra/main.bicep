@@ -305,7 +305,7 @@ var _useAgentic = useAgentic
 @allowed([true, false])
 param networkIsolation bool = false
 var _networkIsolation = networkIsolation
-`
+
 // VNet settings
 
 @description('Virtual network name, you can leave as it is to generate a random name.')
