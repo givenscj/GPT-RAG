@@ -8,3 +8,4 @@ results/
 .python_packages
 __pycache__
 .venv
+.venv_temp

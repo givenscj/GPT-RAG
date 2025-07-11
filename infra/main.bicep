@@ -914,16 +914,19 @@ var containers = [
   { name: _azureDbConfig.conversationContainerName
     partitionKey: '/id' 
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   { 
     name: _azureDbConfig.datasourcesContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   { 
     name: _azureDbConfig.vectorStoreContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
     indexingPolicy: {
         automatic: true
         indexingMode: 'consistent'
@@ -966,26 +969,31 @@ var containers = [
     name:  _azureDbConfig.promptsContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   {
     name:  _azureDbConfig.documentsContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   {
     name:  _azureDbConfig.nl2sqlContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   {
     name:  _azureDbConfig.imagesContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
   {
     name:  _azureDbConfig.filesContainerName
     partitionKey: '/id'
     analyticalStoreTTL : -1
+    defaultTTL: -1
   }
 ]
 
@@ -1007,6 +1015,8 @@ module cosmosAccount './core/db/cosmos.bicep' = {
     tags: tags
     secretName: 'azureDBkey'
     keyVaultName: keyVault.outputs.name    
+    defaultTtl: -1 // -1 means no TTL
+    analyticalStorageTtl: -1 // -1 means no TTL
   }
 }
 

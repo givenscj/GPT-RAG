@@ -3,6 +3,7 @@ param databaseName string
 param partitionKey string = '/id'
 param analyticalStoreTTL int = -1
 param autoscaleMaxThroughput int = 1000
+param defaultTtl int = -1
 
 resource  server 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2022-05-15' existing = {
   name: databaseName
@@ -30,7 +31,7 @@ resource container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
           }
         ]
       }
-      defaultTtl: 86400
+      defaultTtl: defaultTtl
     }
     options: {
       autoscaleSettings: {
